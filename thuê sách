@@ -1,0 +1,27 @@
+SqlCommand insertCmd = new SqlCommand(insertQuery, conn, transaction);
+                    insertCmd.Parameters.AddWithValue("@UserID", userID);
+                    insertCmd.Parameters.AddWithValue("@BookID", bookID);
+                    insertCmd.Parameters.AddWithValue("@ReturnDate", returnDate);
+                    insertCmd.ExecuteNonQuery();
+
+                    transaction.Commit();
+                    MessageBox.Show("Thuê sách thành công!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    LoadBooks();
+                }
+                catch (Exception ex)
+                {
+                    transaction.Rollback();
+                    MessageBox.Show("Lỗi thuê sách: " + ex.Message, "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+        }
+
+        private void btn_buy_Click(object sender, EventArgs e)
+        {
+            UserForm userForm = new UserForm();
+            userForm.Show();
+            this.Hide();
+        }
+
+    }
+}
