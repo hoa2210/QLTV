@@ -1,0 +1,81 @@
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Data.SqlClient;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+
+
+namespace QLTV
+{
+    public partial class RentBook : Form
+    {
+        private int userID;
+
+        public RentBook(int userId)
+        {
+            InitializeComponent();
+            userID = userId;
+        }
+
+        private string connectionString = "Server=DESKTOP-EUAE3E3; Database=MANAGE_LIB; User Id=sa; Password=123123;";
+
+
+        private void RentBook_Load(object sender, EventArgs e)
+        {
+            LoadBooks();
+        }
+
+        private void LoadBooks()
+        {
+            string query = "SELECT * FROM Books";
+            using (SqlConnection conn = new SqlConnection(connectionString))
+            using (SqlDataAdapter adapter = new SqlDataAdapter(query, conn))
+            {
+                DataTable dt = new DataTable();
+                adapter.Fill(dt);
+                dgvBooks.DataSource = dt;
+            }
+        }
+
+        private void btn_RentBook_Click(object sender, EventArgs e)
+        {
+            if (dgvBooks.SelectedRows.Count == 0)
+            {
+                MessageBox.Show("Vui lòng chọn một cuốn sách để thuê!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            int bookID = Convert.ToInt32(dgvBooks.SelectedRows[0].Cells["BookID"].Value);
+            int quantity = 1;
+            DateTime returnDate = dtpReturnDate.Value;
+
+            using (SqlConnection conn = new SqlConnection(connectionString))
+            {
+                conn.Open();
+                SqlTransaction transaction = conn.BeginTransaction();
+
+                try
+                {
+                    string checkQuery = "SELECT Quantity FROM Books WHERE BookID = @BookID";
+                    SqlCommand checkCmd = new SqlCommand(checkQuery, conn, transaction);
+                    checkCmd.Parameters.AddWithValue("@BookID", bookID);
+                    int availableQuantity = (int)checkCmd.ExecuteScalar();
+
+                    if (availableQuantity < quantity)
+                    {
+                        MessageBox.Show("Sách này đã hết!", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        return;
+                    }
+
+                    string updateQuery = "UPDATE Books SET Quantity = Quantity - @Quantity WHERE BookID = @BookID";
+                    SqlCommand updateCmd = new SqlCommand(updateQuery, conn, transaction);
+                    updateCmd.Parameters.AddWithValue("@Quantity", quantity);
+                    updateCmd.Parameters.AddWithValue("@BookID", bookID);
+                    updateCmd.ExecuteNonQuery();
+
+                    string insertQuery = "INSERT INTO Rentals (UserID, BookID, RentalDate, ReturnDate) VALUES (@UserID, @BookID, GETDATE(), @ReturnDate)";
