@@ -1,0 +1,68 @@
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+using System.Data.SqlClient;
+
+namespace QLTV
+{
+    public partial class Form1 : Form
+    {
+        public Form1()
+        {
+            InitializeComponent();
+        }
+
+        private string connectionString = "Server=DESKTOP-EUAE3E3; Database=MANAGE_LIB; User Id=sa; Password=123123;";
+        private void btn_login_Click(object sender, EventArgs e)
+        {
+            string username = txt_username.Text;
+            string password = txt_password.Text;
+
+            string query = "SELECT * FROM Users WHERE Username = @Username AND Password = @Password";
+            using (SqlConnection conn = new SqlConnection(connectionString))
+            using (SqlCommand cmd = new SqlCommand(query, conn))
+            {
+                cmd.Parameters.AddWithValue("@Username", username);
+                cmd.Parameters.AddWithValue("@Password", password);
+                conn.Open();
+                SqlDataReader reader = cmd.ExecuteReader();
+
+                if (reader.HasRows)
+                {
+                    reader.Read();
+                    int currentUserID = Convert.ToInt32(reader["UserID"]); 
+                    string role = reader["Role"].ToString();
+                    if (role == "Admin")
+                    {
+                        AdminForm adminForm = new AdminForm();
+                        adminForm.Show();
+                        this.Hide();
+                    }
+                    else
+                    {
+                        RentBook form = new RentBook(currentUserID);
+                        form.Show();
+                        this.Hide();
+                    }
+                }
+                else
+                {
+                    MessageBox.Show("Sai tài khoản hoặc mật khẩu!");
+                }
+            }  
+        }
+
+        private void btn_BuyBook_Click(object sender, EventArgs e)
+        {
+            UserForm userForm = new UserForm();
+            userForm.Show();
+            this.Hide();
+        }
+    }
+}
